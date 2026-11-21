@@ -20,8 +20,7 @@
   
 ### Список команд  
   
-Ограничение доступа с определенных адресов,  правило доступа к службам *SSH* (порт 22), *HTTP* (порт 80)  
-и *HTTPS* (порт 443), запрет на входящий трафик:  
+Ограничение доступа с определенных адресов,  правило доступа к службам *SSH* (порт 22), *HTTP* (порт 80) и *HTTPS* (порт 443), запрет на входящий трафик:  
 ```
 sudo iptables -A INPUT -s 192.168.1.10 -j DROP
 sudo iptables -A INPUT -s 192.168.1.20 -j DROP
@@ -31,7 +30,7 @@ sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 sudo iptables -P INPUT DROP
 ```  
   
-### Вывод команды `iptables -L `  
+***Вывод команды `iptables -L`:***  
   
 ![](screenshots/iptables.png)  
   
@@ -54,12 +53,12 @@ sudo iptables -P INPUT DROP
   
 ### Список команд  
   
-Прокси сервер  
+Прокси сервер:  
 ```
 sudo dnf install squid
 ```  
   
-Список изменений файла `/etc/squid/squid.conf`:  
+Список изменений файла `/etc/squid/squid.conf`: 
 ```
 acl skillfactory_sites dstdomain .skillfactory.ru
 acl yandex_sites dstdomain .yandex.ru .ya.ru .yastatic.net
@@ -88,7 +87,7 @@ http_access allow localhost mailru_sites work_hours
 http_access deny all
 ```  
    
-Перезапуск Squid, проверка службы  
+Перезапуск Squid, проверка службы:  
 ```
 sudo systemctl restart squid
 sudo systemctl status squid --no-pager
@@ -105,10 +104,10 @@ sudo systemctl status squid --no-pager
 curl -I --max-time 10 -x http://127.0.0.1:3128 http://skillfactory.ru
 ```  
   
-Результат: `HTTP/1.1 301 Moved Permanently`.  
+Результат: `HTTP/1.1 301 Moved Permanently`:  
   
 ![](screenshots/skillfactory.png)  
-  
+   
 ***Яндекс***  
 ```
 curl -I -x http://127.0.0.1:3128 https://yandex.ru
@@ -127,7 +126,7 @@ curl -I -x http://127.0.0.1:3128 https://mail.google.com
   
 ![](screenshots/gmail.png)  
   
-***Mail.ru**  
+**Mail.ru**  
 ```
 curl -I -x http://127.0.0.1:3128 https://mail.ru
 ```  
@@ -137,6 +136,7 @@ curl -I -x http://127.0.0.1:3128 https://mail.ru
 ![](screenshots/mail.png)  
     
 P.S. проверка проводилась вне разрешенного времени - поэтому 403 ожидаемо у Яндекс, Gmail, Mail.ru.  
+  
 ---
   
 ## Лабораторная работа OpenVPN  
@@ -178,7 +178,7 @@ cd $HOME/openvpn-pki
 ./easyrsa build-ca
 ```  
   
-Common Name CA: `Fedora-VPN-CA`.  
+**Common Name CA: `Fedora-VPN-CA`**  
   
 Сгенерирован и подписан сертификат сервера:  
 ```
@@ -197,7 +197,7 @@ Common Name CA: `Fedora-VPN-CA`.
 openvpn --genkey tls-crypt tls-crypt.key
 ```  
   
-Создан сис.каталог, скопированы сертификаты, ключи.  
+Создан сис.каталог, скопированы сертификаты, ключи:  
 ```
 sudo install -d -m 700 /etc/openvpn/server
 
@@ -308,7 +308,7 @@ sudo iptables -A INPUT -i tun0 -s 10.8.0.0/24 -p icmp -j ACCEPT
 sudo iptables -L INPUT -n -v
 ```  
   
-Запуск OpenVPN-сервера (Fedora)  
+Запуск OpenVPN-сервера (Fedora):  
 ```
 sudo systemctl start openvpn-server@server
 ```  
@@ -341,7 +341,7 @@ sudo openvpn --config $HOME/kali-client.ovpn
    
 ![](screenshots/openvpn-client-connected.png)  
   
-Алгоритм шифрования: `AES-256-GCM`. 
+Алгоритм шифрования: `AES-256-GCM` 
   
 Сетевые интерфейсы на Кали, маршрут через VPN-server, передача пакетов через Vpn-tun:
 ```
