@@ -5,7 +5,7 @@
 | Лабораторная работа | Краткое описание | Файлы и скриншоты |
 |---|---|---|
 | [**Лабораторная работа iptables**](#лабораторная-работа-iptables) | Настройка правил фильтрации входящего трафика и ограничение доступа по IP-адресам | [Вывод iptables -L](screenshots/iptables.png) |
-| [**Лабораторная работа Squid**](#лабораторная-работа-squid) | Управление доступом к веб-сайтам с ограничением по времени | [Конфигурация](screenshots/config_check.png),[Проверка конфигурации squid parse](screenshots/squidparse.png), [Статус службы](screenshots/squid_check.png), [Skillfactory](screenshots/skillfactory.png), [Яндекс](screenshots/yandex.png), [Gmail](screenshots/gmail.png), [Mail.ru](screenshots/mail.png) |
+| [**Лабораторная работа Squid**](#лабораторная-работа-squid) | Управление доступом к веб-сайтам с ограничением по времени | [Проверка конфигурации squid parse](screenshots/squidparse.png), [Статус службы](screenshots/squid_check.png), [Skillfactory](screenshots/skillfactory.png), [Яндекс](screenshots/yandex.png), [Gmail](screenshots/gmail.png), [Mail.ru](screenshots/mail.png) |
 | [**Лабораторная работа OpenVPN**](#лабораторная-работа-openvpn) | Настройка защищённого VPN-соединения между клиентом и сервером | [Статус сервера](screenshots/openvpn-server-status.png), [Подключение клиента](screenshots/openvpn-client-connected.png), [Проверка VPN-туннеля](screenshots/openvpn-client-route-ping.png) |
   
 ---
