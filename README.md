@@ -5,7 +5,7 @@
 | Лабораторная работа | Краткое описание | Файлы и скриншоты |
 |---|---|---|
 | [**Лабораторная работа iptables**](#лабораторная-работа-iptables) | Настройка правил фильтрации входящего трафика и ограничение доступа по IP-адресам | [Вывод iptables -L](screenshots/iptables.png) |
-| [**Лабораторная работа Squid**](#лабораторная-работа-squid) | Управление доступом к веб-сайтам с ограничением по времени | [Конфигурация](screenshots/config_check.png), [Статус службы](screenshots/squid_check.png), [Skillfactory](screenshots/skillfactory.png), [Яндекс](screenshots/yandex.png), [Gmail](screenshots/gmail.png), [Mail.ru](screenshots/mail.png) |
+| [**Лабораторная работа Squid**](#лабораторная-работа-squid) | Управление доступом к веб-сайтам с ограничением по времени | [Конфигурация](screenshots/config_check.png),![Проверка конфигурации squid parse](screenshots/squidparse.png), [Статус службы](screenshots/squid_check.png), [Skillfactory](screenshots/skillfactory.png), [Яндекс](screenshots/yandex.png), [Gmail](screenshots/gmail.png), [Mail.ru](screenshots/mail.png) |
 | [**Лабораторная работа OpenVPN**](#лабораторная-работа-openvpn) | Настройка защищённого VPN-соединения между клиентом и сервером | [Статус сервера](screenshots/openvpn-server-status.png), [Подключение клиента](screenshots/openvpn-client-connected.png), [Проверка VPN-туннеля](screenshots/openvpn-client-route-ping.png) |
   
 ---
@@ -13,25 +13,29 @@
 ## Лабораторная работа iptables  
   
 ### Задание   
-Настройте правила `iptables` для создания базового файрвола на сервере.  
-Разрешите доступ только к службам *SSH* (порт 22), *HTTP* (порт 80) и *HTTPS* (порт 443).  
-Ограничьте доступ с определенных IP-адресов к вашему серверу, и запретите весь остальной входящий трафик.  
-В качестве решения предоставьте список команд для настройки и продемонстрируйте вывод команды `iptables -L`.  
+Настройте правила `iptables` для создания базового файрвола на сервере.  Разрешите доступ только к службам *SSH* (порт 22), *HTTP* (порт 80) и *HTTPS* (порт 443).  Ограничьте доступ с определенных IP-адресов к вашему серверу, и запретите весь остальной входящий трафик.  В качестве решения предоставьте список команд для настройки и продемонстрируйте вывод команды `iptables -L`.  
   
 ### Список команд  
   
-Ограничение доступа с определенных адресов,  правило доступа к службам *SSH* (порт 22), *HTTP* (порт 80) и *HTTPS* (порт 443), запрет на входящий трафик:  
+*Дополнительно проверены текущие правила - перед основным блоком команд:*
 ```
-sudo iptables -A INPUT -s 192.168.1.10 -j DROP
-sudo iptables -A INPUT -s 192.168.1.20 -j DROP
-sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
-sudo iptables -P INPUT DROP
+sudo iptables -L
 ```  
   
-***Вывод команды `iptables -L`:***  
+ ![](screenshots/iptables-first-check.png)  
   
+Ограничение доступа с определенных адресов,  правило доступа к службам *SSH* (порт 22), *HTTP* (порт 80) и *HTTPS* (порт 443), запрет на входящий трафик:  
+```
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -A INPUT -p tcp -s 192.168.1.10,192.168.1.20 -m conntrack --ctstate NEW -m tcp --dport 22 -j ACCEPT
+sudo iptables -A INPUT -p tcp -s 192.168.1.10,192.168.1.20 -m conntrack --ctstate NEW -m multiport --dports 80,443 -j ACCEPT
+sudo iptables -P INPUT DROP
+sudo iptables -L
+```  
+  
+
+### Вывод команды `iptables -L`  
+   
 ![](screenshots/iptables.png)  
   
 ---
@@ -53,18 +57,26 @@ sudo iptables -P INPUT DROP
   
 ### Список команд  
   
-Прокси сервер:  
+Прокси сервер  
 ```
-sudo dnf install squid
+sudo dnf install squid -y
 ```  
   
-Список изменений файла `/etc/squid/squid.conf`: 
+В 1 лаб. политика INPUT DROP, поэтому разр. loopback:
 ```
+sudo iptables -I INPUT 2 -i lo -j ACCEPT
+```
+  
+Список изменений файла `/etc/squid/squid.conf`:  
+```
+# Локальная сеть
+acl localnet src 172.16.37.0/24
+
+# Разрешённые ресурсы
 acl skillfactory_sites dstdomain .skillfactory.ru
 acl yandex_sites dstdomain .yandex.ru .ya.ru .yastatic.net
 acl gmail_sites dstdomain .gmail.com mail.google.com accounts.google.com .gstatic.com
 acl mailru_sites dstdomain .mail.ru
-…
 acl work_hours time MTWHFA 09:00-18:00
 …
 …
@@ -72,22 +84,31 @@ acl work_hours time MTWHFA 09:00-18:00
 …
 …
 # Skillfactory — без ограничения по времени
-http_access allow localhost skillfactory_sites
+http_access allow localnet skillfactory_sites
 
 # Яндекс — только в рабочее время
-http_access allow localhost yandex_sites work_hours
+http_access allow localnet yandex_sites work_hours
 
 # Gmail — только в рабочее время
-http_access allow localhost gmail_sites work_hours
+http_access allow localnet gmail_sites work_hours
 
 # Mail.ru — только в рабочее время
-http_access allow localhost mailru_sites work_hours
+http_access allow localnet mailru_sites work_hours
 …
 …
+
 http_access deny all
+
+```
+
+Проверка конфигурации Squid:  
+```
+sudo squid -k parse
 ```  
-   
-Перезапуск Squid, проверка службы:  
+  
+![](screenshots/squidparse.png)   
+  
+Перезапуск Squid, проверка службы  
 ```
 sudo systemctl restart squid
 sudo systemctl status squid --no-pager
@@ -101,16 +122,16 @@ sudo systemctl status squid --no-pager
   
 ***Skillfactory***  
 ```
-curl -I --max-time 10 -x http://127.0.0.1:3128 http://skillfactory.ru
+curl -I --max-time 10 -x http://172.16.37.134:3128 http://skillfactory.ru
 ```  
   
-Результат: `HTTP/1.1 301 Moved Permanently`:  
+Результат: `HTTP/1.1 301 Moved Permanently`.  
   
 ![](screenshots/skillfactory.png)  
-   
+  
 ***Яндекс***  
 ```
-curl -I -x http://127.0.0.1:3128 https://yandex.ru
+curl -I -x http://172.16.37.134:3128 https://yandex.ru
 ```  
   
 Результат - `403`:  
@@ -119,16 +140,16 @@ curl -I -x http://127.0.0.1:3128 https://yandex.ru
    
 ***Gmail***  
 ```
-curl -I -x http://127.0.0.1:3128 https://mail.google.com
+curl -I -x http://172.16.37.134:3128 https://mail.google.com
 ```  
   
  Результат - `403`:  
   
 ![](screenshots/gmail.png)  
   
-**Mail.ru**  
+***Mail.ru***  
 ```
-curl -I -x http://127.0.0.1:3128 https://mail.ru
+curl -I -x http://172.16.37.134:3128 https://mail.ru
 ```  
   
 Результат - `403`:  
@@ -136,8 +157,6 @@ curl -I -x http://127.0.0.1:3128 https://mail.ru
 ![](screenshots/mail.png)  
     
 P.S. проверка проводилась вне разрешенного времени - поэтому 403 ожидаемо у Яндекс, Gmail, Mail.ru.  
-  
----
   
 ## Лабораторная работа OpenVPN  
   
@@ -178,7 +197,7 @@ cd $HOME/openvpn-pki
 ./easyrsa build-ca
 ```  
   
-**Common Name CA: `Fedora-VPN-CA`**  
+Common Name CA: `Fedora-VPN-CA`.  
   
 Сгенерирован и подписан сертификат сервера:  
 ```
@@ -197,7 +216,7 @@ cd $HOME/openvpn-pki
 openvpn --genkey tls-crypt tls-crypt.key
 ```  
   
-Создан сис.каталог, скопированы сертификаты, ключи:  
+Создан сис.каталог, скопированы сертификаты, ключи.  
 ```
 sudo install -d -m 700 /etc/openvpn/server
 
@@ -308,7 +327,7 @@ sudo iptables -A INPUT -i tun0 -s 10.8.0.0/24 -p icmp -j ACCEPT
 sudo iptables -L INPUT -n -v
 ```  
   
-Запуск OpenVPN-сервера (Fedora):  
+Запуск OpenVPN-сервера (Fedora)  
 ```
 sudo systemctl start openvpn-server@server
 ```  
@@ -341,7 +360,7 @@ sudo openvpn --config $HOME/kali-client.ovpn
    
 ![](screenshots/openvpn-client-connected.png)  
   
-Алгоритм шифрования: `AES-256-GCM` 
+Алгоритм шифрования: `AES-256-GCM`. 
   
 Сетевые интерфейсы на Кали, маршрут через VPN-server, передача пакетов через Vpn-tun:
 ```
@@ -354,5 +373,4 @@ ping -c 4 10.8.0.1
   
 ![](screenshots/openvpn-client-route-ping.png)  
   
-**P.S. Имя `mac-client` изначально создавалось, потому как macOS планировалась использоваться как клиент.  
-По итогу оставила это имя, а клиент в итоге стал Kali.**
+**P.S. Имя `mac-client` изначально создавалось, потому как macOS планировалась использоваться как клиент.По итогу оставила это имя, а клиент в итоге стал Kali.**  
